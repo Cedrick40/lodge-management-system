@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-1">{{ guest.full_name }}</h1>
+<p class="text-gray-500 mb-4">{{ guest.phone }} · {{ guest.email|default:"no email" }} · {{ guest.nationality|default:"—" }}</p>
+
+<a href="{% url 'guests:edit' guest.pk %}" class="text-sm text-blue-600">Edit guest</a>
+
+<h2 class="text-lg font-medium mt-6 mb-2">Stay history</h2>
+<p class="text-gray-500 text-sm">
+    Total spend: K{{ total_spend }} — this section fills in automatically once Reservations
+    and Folios (Modules 3–4) exist. No action needed here now.
+</p>
+{% for r in reservations %}
+    <div class="border-b py-2">{{ r.check_in_date }} → {{ r.check_out_date }} · Room {{ r.room.room_number }}</div>
+{% endfor %}
+{% endblock %}

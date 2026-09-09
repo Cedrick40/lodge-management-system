@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Lodge Management System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/[email protected]/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard:home' %}">Lodge Management</a>
+            <div class="navbar-nav ms-auto d-flex flex-row gap-3 align-items-center">
+                <a class="nav-link text-white" href="{% url 'dashboard:home' %}">Dashboard</a>
+                {% if user.role == "OWNER_GM" or user.is_superuser %}
+                    <a class="nav-link text-white" href="{% url 'accounts:staff_list' %}">Staff</a>
+                {% endif %}
+                {% if request.user.role in "OWNER_GM,FRONT_DESK,ACCOUNTANT" %}
+                <a href="{% url 'guests:list' %}">Guests</a>
+                {% endif %}
+                <span class="text-white-50">
+                    {{ user.get_full_name|default:user.username }}
+                    {% if user.get_role_display %} &middot; {{ user.get_role_display }}{% endif %}
+                </span>
+                <form method="post" action="{% url 'logout' %}" class="d-inline mb-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-light">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

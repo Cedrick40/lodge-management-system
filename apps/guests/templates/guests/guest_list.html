@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Guests</h1>
+
+<form method="get" class="mb-4">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name or phone"
+           class="border rounded px-3 py-2 w-full max-w-sm">
+</form>
+
+<a href="{% url 'guests:create' %}" class="inline-block bg-blue-600 text-white px-4 py-2 rounded mb-4">
+    + Add Guest
+</a>
+
+<table class="w-full border-collapse">
+    <thead>
+        <tr class="text-left border-b">
+            <th class="py-2">Name</th><th>Phone</th><th>Email</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for guest in guests %}
+        <tr class="border-b">
+            <td class="py-2"><a href="{% url 'guests:detail' guest.pk %}" class="text-blue-600">{{ guest.full_name }}</a></td>
+            <td>{{ guest.phone }}</td>
+            <td>{{ guest.email|default:"—" }}</td>
+            <td><a href="{% url 'guests:edit' guest.pk %}" class="text-sm text-gray-500">Edit</a></td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="4" class="py-4 text-gray-500">No guests found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

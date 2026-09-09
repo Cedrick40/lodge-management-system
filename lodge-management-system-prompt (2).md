@@ -2,6 +2,8 @@
 
 > Copy everything below into your AI coding tool (Claude Code, ChatGPT, a developer brief, etc.) as the starting instruction. It is written so it can be fed in as a single prompt, then followed step by step, module by module.
 
+> **This is the closed, complete plan** — every module needed to reach a finished, production-ready system is listed below, including deployment (Module 9) and a final Definition of Done (Section 9). If a genuinely new requirement shows up later (e.g. you expand from 23 to 26 rooms, or add a second lodge), that is a change of scope to re-plan deliberately — not a sign this plan was incomplete.
+
 ---
 
 ## 1. Project Context
@@ -179,10 +181,22 @@ Follow these steps in order to get from a blank machine to a running Django proj
 
 **1b. Core models & dynamic room management**
 - Build `RoomType` (name, capacity, `night_rate` in ZMW, `short_time_rate` in ZMW, `short_time_hours`, is_active) and `Room` (room_number, room_type FK, status, is_active, notes) models — night rate and short-time rate/duration must be editable per room type from the Django admin or a dedicated settings screen, never hardcoded in code.
-- Build full CRUD views (Create, Read, Update, Delete) allowing the Owner/GM to dynamically add rooms, edit room numbers/types, or **archive (soft-delete)** rooms without touching past financial records.
+- Build **both** a single-room create screen and a **Bulk Add Rooms** screen (numeric range or a pasted custom list, one room type applied to the whole batch) so 23 rooms don't have to be entered one at a time. Django admin can host both — a normal "Add room" page plus one extra custom admin view — without needing a separate front-end.
+- Every "delete" action on a room or room type must actually be an **archive (soft-delete)** (`is_active = False`), enforced so it cannot be bypassed by a bulk action, so past financial records referencing that room are never broken.
 - Seed the system with a couple of example room types (e.g., Standard at K450/night, K200/short-time) the owner can rename/edit — do not hardcode 23 rooms, or the K450/K200 figures, anywhere in application logic, only as initial seed data.
 - Extend Django's `AbstractUser` with a `role` field: `OWNER_GM`, `FRONT_DESK`, `HOUSEKEEPING`, `BAR_STAFF`, `ACCOUNTANT`.
 - Write custom Django permission decorators/mixins enforcing the role matrix (Section 5) on every view from the start.
+
+**1c. Staff Management**
+- Build a Staff Management screen (list, add, edit, deactivate) so the Owner/GM can onboard new staff — Front Desk, Bar Staff, Housekeeping, Accountant — without ever writing code. Django's admin User screen (extended with the `role` field) satisfies this; build a friendlier custom screen only if raw admin feels too technical for whoever will actually use it day-to-day.
+- "Deactivate" a staff account rather than deleting it (`is_active = False`, Django's built-in field on `User`) — same soft-delete principle as rooms, so the audit trail of who did what historically is never lost.
+- The very first account — the Owner/GM's own login — is the one exception created manually during setup (Module 1a, step 11, `createsuperuser`). Every other staff account from that point on goes through this screen, not the command line.
+
+**1d. Login, Base Template & Dashboard Shell**
+- Build a branded login/logout page for the system's own front-end — not Django's default `/admin/login/`. This is what Front Desk, Bar Staff, and Housekeeping actually use every day; ideally only the Owner/GM and Accountant ever need to see `/admin/` at all.
+- Build one shared base template (site name/logo, a role-aware navigation menu — a Bar Staff account should not even see a "Reports" link it can't open) that every screen in Modules 2–8 extends. Without this, the finished system looks like a pile of separate pages instead of one product.
+- Build a simple Dashboard/Home screen shown immediately after login: today's arrivals, today's departures, rooms occupied vs. available right now, and a count of outstanding balances. This is the front page of the whole system, and the first thing that makes it feel "real" rather than a set of admin forms.
+- Include a password-reset/forgot-password flow for staff logins. Without this, a locked-out Front Desk account means calling a developer at 11pm — which defeats the entire point of Module 1c.
 
 ### Module 2: Guest Profiles & Basic Registration
 - `Guest` model: `full_name`, `phone`, `email`, `nationality` (optional), `notes`. **No passport/NRC field.**
@@ -228,6 +242,23 @@ Follow these steps in order to get from a blank machine to a running Django proj
 - Configure `django-pwa`: web app manifest + service worker, caching core CSS/JS statics.
 - Browser-side IndexedDB queue recording front-desk actions (check-ins, room status changes) made while offline.
 - Auto-sync queued actions to Django REST endpoints once connectivity is restored.
+
+### Module 9: Deployment & Go-Live (Production)
+Goal: take the system from "running on your laptop" to a live, secured, backed-up system your real staff use every day. Skipping this module is why a finished codebase and a finished product are not the same thing.
+
+- Choose a cloud host (e.g. Railway, Render, DigitalOcean App Platform, or another provider that supports Django + PostgreSQL) and provision a **production** PostgreSQL database there — separate from anything used in development.
+- Production settings checklist, all confirmed before go-live:
+  - `DEBUG = False`
+  - a real `SECRET_KEY` loaded from an environment variable, never committed to git
+  - `ALLOWED_HOSTS` set to your real domain
+  - HTTPS enforced (`SECURE_SSL_REDIRECT = True`)
+  - static files served via WhiteNoise (or a CDN)
+- Point a domain or subdomain at the deployed system.
+- Turn on **automatic daily database backups** on the host — confirm explicitly that this is happening; don't assume a host does it by default.
+- Load all secrets (database URL, secret key, mobile money aggregator keys) as environment variables on the host — never hardcoded in code, never committed to git.
+- Run the full migration set against the production database, then create the **real** first `OWNER_GM` superuser account — not test/seed data.
+- Smoke-test the live system end-to-end on production, not localhost: log in, add a real room, take a real reservation, record a real payment, generate a real invoice PDF.
+- Set up basic uptime/error monitoring (even a free tier of Sentry, or a simple health-check ping) so a crash is caught before a guest is standing at the desk during it.
 
 ---
 
@@ -278,4 +309,24 @@ Enforce this via Django permission decorators/mixins on every view — do not re
 
 ---
 
+## 9. Definition of Done — Final Production Checklist
+
+The build is finished — not "the last module is done," but genuinely finished — only when every line below is true. Treat this as the actual finish line, not the module list.
+
+- [ ] All 9 modules are built and working **together**, not just individually tested in isolation.
+- [ ] The Owner/GM can add rooms (single and bulk), edit rates, and add/deactivate staff entirely through the system's own screens — never by writing code or calling a developer.
+- [ ] Every staff role sees only what Section 5's matrix allows — verified by actually logging in as each role, not assumed from reading the code.
+- [ ] The system is live on a real domain, on a real cloud host, with `DEBUG = False` and daily backups confirmed running (Module 9).
+- [ ] A real booking has been taken, a real payment recorded, and a real invoice PDF generated **on the production system** — not only on localhost.
+- [ ] Front-desk and bar staff have actually used the real system at least once, and their feedback has been acted on, before full rollout.
+- [ ] A short written note exists for "what to do if the internet goes down" and "how to restore from backup" — the two failure modes most likely to actually happen at a rural lodge.
+
+If any box above is unchecked, the system is not finished yet, regardless of which module number you're currently on. If a new requirement surfaces after this point, it's a deliberate scope change — add it here and re-check the relevant boxes, rather than treating it as a bug in the plan.
+
+---
+
 *This prompt is scoped for a small, 23-room independent lodge running on Django, ZMW-only, with a bar and no activities/OTA/ID-capture requirements yet. When ready to add a meal plan, list on OTAs, or capture guest IDs, extend the relevant module using the Future-Proofing Matrix above rather than starting over.*
+
+## Note:
+mkdir -p apps/accounts (used to create app inside an app)
+touch apps/accounts/templates/home.html (used to create a file inside an app)

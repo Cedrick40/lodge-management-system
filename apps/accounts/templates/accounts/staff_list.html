@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Staff Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Staff Management</h1>
+    <a href="{% url 'accounts:staff_add' %}" class="btn btn-primary">+ Add Staff</a>
+</div>
+
+<table class="table table-bordered bg-white">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for member in staff %}
+        <tr class="{% if not member.is_active %}text-muted{% endif %}">
+            <td>{{ member.username }}</td>
+            <td>{{ member.get_full_name|default:"—" }}</td>
+            <td>{{ member.get_role_display|default:"—" }}</td>
+            <td>{% if member.is_active %}Active{% else %}Deactivated{% endif %}</td>
+            <td>
+                <a href="{% url 'accounts:staff_edit' member.pk %}">Edit</a>
+                &nbsp;|&nbsp;
+                <a href="{% url 'accounts:staff_reset_password' member.pk %}">Reset Password</a>
+                {% if member != request.user %}
+                    &nbsp;|&nbsp;
+                    <form method="post" action="{% url 'accounts:staff_toggle_active' member.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link p-0 align-baseline">
+                            {% if member.is_active %}Deactivate{% else %}Reactivate{% endif %}
+                        </button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

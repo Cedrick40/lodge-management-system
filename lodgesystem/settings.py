@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'apps.housekeeping',
     'apps.billing',
     'apps.bar_pos',
+    'apps.accounts',
+    'apps.dashboard'
 ]
 
 MIDDLEWARE = [
@@ -60,7 +62,7 @@ ROOT_URLCONF = 'lodgesystem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -103,6 +105,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+AUTH_USER_MODEL = "accounts.User"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Internationalization
@@ -131,3 +135,16 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# --- Auth redirects ---
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "dashboard:home"
+LOGOUT_REDIRECT_URL = "login"
+
+# --- Email (for the "forgot your password" flow) ---
+# Dev: prints the reset email to your terminal instead of really
+# sending it, so you can test the flow with no SMTP server at all.
+# Swap this for a real backend (e.g. SMTP via your host, or an
+# email API) in Module 9 when you go to production.
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "no-reply@yourlodge.example"

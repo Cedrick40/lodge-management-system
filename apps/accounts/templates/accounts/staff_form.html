@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit Staff{% else %}Add Staff{% endif %}{% endblock %}
+{% block content %}
+<h1 class="mb-4">{% if object %}Edit Staff: {{ object.username }}{% else %}Add Staff{% endif %}</h1>
+<div class="row">
+    <div class="col-md-5">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">
+                {% if object %}Save Changes{% else %}Create Account{% endif %}
+            </button>
+            <a href="{% url 'accounts:staff_list' %}" class="ms-2">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

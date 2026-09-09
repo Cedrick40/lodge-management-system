@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post">
+  {% csrf_token %}
+  <table>
+    {{ form.as_table }}
+  </table>
+  <p>
+    <input type="submit" value="Create Rooms" class="default">
+    <a href="{% url 'admin:rooms_room_changelist' %}" style="margin-left: 10px;">Cancel</a>
+  </p>
+</form>
+{% endblock %}
